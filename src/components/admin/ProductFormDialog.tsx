@@ -31,8 +31,7 @@ export function ProductFormDialog({ isOpen, onClose, productId }: ProductFormDia
     features: [''],
     tags: [''],
     preview: [''],
-    download_url: '',
-    figma_url: ''
+    download_url: ''
   });
   const [uploading, setUploading] = useState(false);
 
@@ -48,8 +47,7 @@ export function ProductFormDialog({ isOpen, onClose, productId }: ProductFormDia
         features: product.features,
         tags: product.tags,
         preview: product.preview,
-        download_url: (product as any).download_url || '',
-        figma_url: (product as any).figma_url || ''
+        download_url: (product as any).download_url || ''
       });
     } else {
       resetForm();
@@ -67,8 +65,7 @@ export function ProductFormDialog({ isOpen, onClose, productId }: ProductFormDia
       features: [''],
       tags: [''],
       preview: [''],
-      download_url: '',
-      figma_url: ''
+      download_url: ''
     });
   };
 
@@ -294,7 +291,7 @@ export function ProductFormDialog({ isOpen, onClose, productId }: ProductFormDia
           <div className="space-y-4 border border-amber-200 dark:border-amber-800 rounded-lg p-4 bg-amber-50/50 dark:bg-amber-950/20">
             <div className="flex items-center gap-2">
               <h3 className="font-semibold text-lg text-slate-900 dark:text-white">
-                🔒 Enlaces de Descarga
+                Enlaces de Descarga
               </h3>
               <span className="text-xs bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full">
                 Solo se envían por email
@@ -304,34 +301,18 @@ export function ProductFormDialog({ isOpen, onClose, productId }: ProductFormDia
               Estos enlaces NO se muestran públicamente. Solo se envían al comprador por email después del pago.
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="download_url">📥 Link de Descarga</Label>
-                <Input
-                  id="download_url"
-                  value={formData.download_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, download_url: e.target.value }))}
-                  placeholder="https://drive.google.com/..."
-                  type="url"
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Link a Drive, Dropbox, etc.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="figma_url">🎨 Link de Figma</Label>
-                <Input
-                  id="figma_url"
-                  value={formData.figma_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, figma_url: e.target.value }))}
-                  placeholder="https://figma.com/..."
-                  type="url"
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Link editable de Figma (opcional)
-                </p>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="download_url">Link de Descarga</Label>
+              <Input
+                id="download_url"
+                value={formData.download_url}
+                onChange={(e) => setFormData(prev => ({ ...prev, download_url: e.target.value }))}
+                placeholder="https://drive.google.com/..."
+                type="url"
+              />
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Link a Drive, Dropbox, etc.
+              </p>
             </div>
           </div>
 

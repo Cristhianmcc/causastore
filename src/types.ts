@@ -26,6 +26,7 @@ export interface Product {
   downloads: number;
   rating: number;
   views?: number;
+  download_url?: string;
 }
 
 export type PageType = 

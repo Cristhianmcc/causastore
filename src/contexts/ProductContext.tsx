@@ -75,7 +75,8 @@ export function ProductProvider({ children }: { children: ReactNode }) {
           preview: product.preview || [],
           downloads: 0,
           rating: 0,
-          views: 0
+          views: 0,
+          download_url: (product as any).download_url || null
         }])
         .select()
         .single();
@@ -104,7 +105,8 @@ export function ProductProvider({ children }: { children: ReactNode }) {
           description: updates.description,
           features: updates.features,
           tags: updates.tags,
-          preview: updates.preview
+          preview: updates.preview,
+          download_url: (updates as any).download_url
         })
         .eq('id', id);
 
