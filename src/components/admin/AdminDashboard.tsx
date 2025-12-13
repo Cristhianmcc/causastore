@@ -10,17 +10,19 @@ import {
   TrendingUp,
   Eye,
   Download,
-  DollarSign
+  DollarSign,
+  ShoppingCart
 } from 'lucide-react';
 import { ProductsManager } from './ProductsManager';
 import { DashboardStats } from './DashboardStats';
+import { SalesManager } from './SalesManager';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products'>('products');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'sales'>('products');
   const { logout } = useAuth();
   const { products } = useProducts();
 
@@ -31,7 +33,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   const menuItems = [
     { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'products' as const, icon: Package, label: 'Productos' }
+    { id: 'products' as const, icon: Package, label: 'Productos' },
+    { id: 'sales' as const, icon: ShoppingCart, label: 'Ventas' }
   ];
 
   return (
@@ -95,6 +98,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <div className="max-w-7xl mx-auto">
           {activeTab === 'dashboard' && <DashboardStats />}
           {activeTab === 'products' && <ProductsManager />}
+          {activeTab === 'sales' && <SalesManager />}
         </div>
       </main>
     </div>

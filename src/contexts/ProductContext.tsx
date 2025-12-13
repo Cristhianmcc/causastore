@@ -139,9 +139,14 @@ export function ProductProvider({ children }: { children: ReactNode }) {
 
   const incrementViews = useCallback(async (id: string) => {
     try {
-      const { error } = await supabase.rpc('increment_views', { product_id: id });
+      // Verificar si el ID es un UUID válido
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       
-      if (error) throw error;
+      if (uuidRegex.test(id)) {
+        const { error } = await supabase.rpc('increment_views', { product_id: id });
+        
+        if (error) throw error;
+      }
 
       // Actualizar localmente sin refrescar toda la lista
       setProducts(prev => prev.map(p => 

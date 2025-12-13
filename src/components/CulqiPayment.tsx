@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { X, CreditCard, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { CreditCard, Shield, AlertCircle, X, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import { Product } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -19,19 +20,27 @@ declare global {
   }
 }
 
-export function CulqiPayment({ product, onClose, onSuccess }: CulqiPaymentProps) {
-  const [loading, setLoading] = useState(false);
+export function CulqiPayment({ 
+  product,
+  onClose,
+  onSuccess
+}: CulqiPaymentProps) {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Cargar el script de Culqi
+    // Cargar script de Culqi
     const script = document.createElement('script');
     script.src = 'https://checkout.culqi.com/js/v4';
     script.async = true;
     document.body.appendChild(script);
 
     script.onload = () => {
-      configureCulqi();
+      const publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
+      if (publicKey) {
+        window.Culqi.publicKey = publicKey;
+        window.Culqi.init();
+      }
     };
 
     return () => {
@@ -39,50 +48,39 @@ export function CulqiPayment({ product, onClose, onSuccess }: CulqiPaymentProps)
         document.body.removeChild(script);
       }
     };
-  }, [product]);
+  }, []);
 
-  const configureCulqi = () => {
-    const publicKey = import.meta.env.VITE_CULQI_PUBLIC_KEY;
+  // Configurar el callback de Culqi
+  useEffect(() => {
+    const currentEmail = email; // Capturar el email actual
     
-    if (!publicKey) {
-      toast.error('Error de configuración: Llave pública de Culqi no encontrada');
-      return;
-    }
-
-    window.Culqi = {
-      publicKey,
-      settings: {
-        title: 'CodeMarket Pro',
-        currency: 'PEN',
-        amount: Math.round(product.price * 100), // Culqi espera el monto en centavos
-      },
-      options: {
-        lang: 'es',
-        installments: false,
-        paymentMethods: {
-          tarjeta: true,
-          yape: true,
-          billetera: false,
-          bancaMovil: false,
-          agente: false,
-          cuotealo: false,
-        },
-      },
-    };
-
-    window.culqi = function () {
+    window.culqi = async function () {
       if (window.Culqi.token) {
         const token = window.Culqi.token.id;
-        toast.success('¡Pago procesado exitosamente!');
-        onSuccess(token);
-        onClose();
+        setLoading(true);
+        
+        try {
+          // Usar currentEmail en lugar de email del estado
+          const paymentData = {
+            token,
+            productId: product.id,
+            email: currentEmail || email, // Usar el email capturado
+            amount: product.price,
+          };
+          
+          console.log('Datos de pago:', paymentData);
+          await processPayment(token, currentEmail || email);
+        } catch (error) {
+          console.error('Error al procesar el pago:', error);
+          setLoading(false);
+        }
       } else if (window.Culqi.error) {
         console.error('Error de Culqi:', window.Culqi.error);
-        toast.error('Error al procesar el pago. Por favor, intenta nuevamente.');
+        toast.error(window.Culqi.error.user_message || 'Error al procesar el pago');
         setLoading(false);
       }
     };
-  };
+  }, [product, email]); // Agregar email como dependencia
 
   const handlePayment = () => {
     if (!email) {
@@ -96,15 +94,79 @@ export function CulqiPayment({ product, onClose, onSuccess }: CulqiPaymentProps)
       return;
     }
 
-    setLoading(true);
-    
-    if (window.Culqi && window.Culqi.open) {
-      window.Culqi.settings.description = product.title;
-      window.Culqi.options.email = email;
-      window.Culqi.open();
-      setLoading(false);
-    } else {
+    if (typeof window.Culqi === 'undefined') {
       toast.error('Error al cargar Culqi. Por favor recarga la página.');
+      return;
+    }
+
+    // Configurar el checkout
+    window.Culqi.settings({
+      title: 'CodeMarket Pro',
+      currency: 'PEN',
+      amount: Math.round(product.price * 100),
+    });
+
+    window.Culqi.options({
+      lang: 'auto',
+      installments: false,
+      paymentMethods: {
+        tarjeta: true,
+        yape: true,
+        bancaMovil: false,
+        agente: false,
+        billetera: false,
+        cuotealo: false,
+      },
+    });
+
+    // Abrir el modal
+    window.Culqi.open();
+  };
+
+  const processPayment = async (token: string, paymentEmail: string) => {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Configuración de Supabase no encontrada');
+      }
+
+      const paymentData = {
+        token: token,
+        productId: product.id,
+        email: paymentEmail,
+        amount: product.price,
+      };
+
+      console.log('Enviando pago con datos:', paymentData);
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/process-payment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Error al procesar el pago');
+      }
+
+      // Mostrar mensaje de éxito
+      toast.success('¡Pago exitoso! Revisa tu email para acceder al producto.');
+
+      onSuccess(token);
+      onClose();
+    } catch (error: any) {
+      console.error('Error al procesar el pago:', error);
+      toast.error(error.message || 'Error al procesar el pago. Por favor, intenta nuevamente.');
+      throw error;
+    } finally {
       setLoading(false);
     }
   };
